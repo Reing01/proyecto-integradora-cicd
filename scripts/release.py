@@ -1,5 +1,6 @@
 """Flujo reproducible para Windows y Linux. No necesita paquetes de Python."""
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import json
@@ -104,8 +105,10 @@ def backup(environment):
     compose(environment, 'exec', '-T', 'app', 'python', '-c',
             "import sqlite3; src=sqlite3.connect('/data/inventory.sqlite'); "
             "dst=sqlite3.connect('/tmp/backup.sqlite'); src.backup(dst); dst.close(); src.close()")
-    container = compose(environment, 'ps', '-q', 'app', capture=True)
-    run('docker', 'cp', f'{container}:/tmp/backup.sqlite', destination)
+    encoded = compose(environment, 'exec', '-T', 'app', 'python', '-c',
+                      "import base64; from pathlib import Path; print(base64.b64encode(Path('/tmp/backup.sqlite').read_bytes()).decode())",
+                      capture=True)
+    destination.write_bytes(base64.b64decode(encoded, validate=True))
     import sqlite3
     with closing(sqlite3.connect(destination)) as database:
         assert database.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
@@ -155,7 +158,7 @@ def deploy(environment, image, version, monitoring=False):
         compose(environment, 'up', '-d', '--wait', '--wait-timeout', '120', '--pull', 'never', 'app')
         smoke(environment, version)
         if monitoring:
-            compose(environment, 'up', '-d', 'prometheus', 'blackbox', monitoring=True)
+            compose(environment, 'up', '-d', '--build', 'prometheus', 'blackbox', monitoring=True)
     except Exception:
         print('Despliegue fallido; restaurando versión anterior.', file=sys.stderr)
         write_env(path, current)
