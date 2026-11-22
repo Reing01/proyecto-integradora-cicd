@@ -1,0 +1,130 @@
+{
+  "recorded_utc": "2026-11-22T19:17:38.272898+00:00",
+  "repository": "https://github.com/Reing01/proyecto-integradora-cicd",
+  "private": true,
+  "source_commit": "fa8faae45c14055b10a48ee82c750721fe102178",
+  "tag": "v1.0.0",
+  "workflow_url": "https://github.com/Reing01/proyecto-integradora-cicd/actions/runs/45059504689",
+  "workflow_result": "success",
+  "jobs": [
+    {
+      "name": "verify",
+      "result": "success",
+      "runner": "GitHub Actions 1000001129"
+    },
+    {
+      "name": "staging",
+      "result": "success",
+      "runner": "inventory-codex-host"
+    },
+    {
+      "name": "production",
+      "result": "success",
+      "runner": "inventory-codex-host"
+    }
+  ],
+  "unit_integration_tests": {
+    "count": 13,
+    "result": "passed",
+    "evidence": "verify job in linked run"
+  },
+  "release_tests": {
+    "result": "passed",
+    "checks": [
+      "readiness",
+      "authentication",
+      "create",
+      "duplicate SKU",
+      "negative quantity",
+      "persistence after restart"
+    ]
+  },
+  "recovery_drill": {
+    "result": "passed",
+    "image": "inventory:1.0.0",
+    "checks": [
+      "consistent backup",
+      "restore prior data",
+      "automatic rollback after injected smoke failure",
+      "preserved product quantity"
+    ]
+  },
+  "promtool": {
+    "config": "valid",
+    "alert_rules": 4
+  },
+  "load_test": {
+    "environment": "staging",
+    "requests": 200,
+    "concurrency": 10,
+    "successful": 200,
+    "server_errors": 0,
+    "p95_ms": 102.67,
+    "throughput_rps": 266.85,
+    "duration_seconds": 0.75,
+    "scope": "Brief local measurement before final tag promotion; not a sustained load certification"
+  },
+  "environments": {
+    "staging": {
+      "health": {
+        "status": "ok",
+        "version": "fa8faae45c14055b10a48ee82c750721fe102178"
+      },
+      "ready": true,
+      "prometheus_targets": [
+        {
+          "job": "inventory",
+          "health": "up"
+        },
+        {
+          "job": "readiness",
+          "health": "up"
+        }
+      ],
+      "probe_success": 1,
+      "deployment": {
+        "environment": "staging",
+        "image": "inventory:fa8faae45c14055b10a48ee82c750721fe102178",
+        "version": "fa8faae45c14055b10a48ee82c750721fe102178",
+        "utc": "2026-11-22T19:15:48.518065+00:00",
+        "smoke": "passed"
+      }
+    },
+    "production": {
+      "health": {
+        "status": "ok",
+        "version": "fa8faae45c14055b10a48ee82c750721fe102178"
+      },
+      "ready": true,
+      "prometheus_targets": [
+        {
+          "job": "inventory",
+          "health": "up"
+        },
+        {
+          "job": "readiness",
+          "health": "up"
+        }
+      ],
+      "probe_success": 1,
+      "deployment": {
+        "environment": "production",
+        "image": "inventory:fa8faae45c14055b10a48ee82c750721fe102178",
+        "version": "fa8faae45c14055b10a48ee82c750721fe102178",
+        "utc": "2026-11-22T19:16:29.907217+00:00",
+        "smoke": "passed"
+      }
+    }
+  },
+  "backup_workflow": {
+    "html_url": "https://github.com/Reing01/proyecto-integradora-cicd/actions/runs/45059814809",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "limitations": [
+    "Local host must stay powered on with Docker and runner running",
+    "No off-host backup destination configured",
+    "No external availability probe or alert notification receiver",
+    "SLA values are academic case targets rather than measured monthly guarantees"
+  ]
+}

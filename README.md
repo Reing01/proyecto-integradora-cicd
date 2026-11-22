@@ -4,6 +4,8 @@ Caso de estudio académico para **Abarrotes La Esquina**, una pequeña empresa f
 
 El documento principal está en [docs/Informe_CICD.pdf](docs/Informe_CICD.pdf). Explica la justificación del pipeline, entorno requerido, niveles de servicio, métricas y parámetros de cada herramienta. El código fuente que lo genera está en `docs/build_report.py`.
 
+Para regenerar el documento: `python -m pip install -r docs/requirements-report.txt` y `python docs/build_report.py`. `docs/evidence.json` conserva los resultados observados de la entrega.
+
 ## Ejecución local
 
 Requisitos: Git, Python 3.12 o 3.13, Docker Engine con contenedores Linux y Docker Compose v2 con soporte de `--wait`. El caso usa Python 3.13 dentro de Docker.
