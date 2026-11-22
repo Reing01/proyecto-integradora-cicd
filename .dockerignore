@@ -1,0 +1,10 @@
+.git
+.release
+.venv
+.qa
+artifacts
+docs
+tests
+__pycache__
+*.sqlite*
+.env*

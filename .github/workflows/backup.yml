@@ -1,0 +1,20 @@
+name: Respaldo diario de inventario
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: inventory-release
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ${{ fromJSON(vars.DEPLOY_RUNNER_LABELS || '["self-hosted","linux","x64","inventory-deploy"]') }}
+    timeout-minutes: 10
+    env:
+      RELEASE_STATE_DIR: ${{ vars.RELEASE_STATE_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/release.py backup --env staging
+      - run: python scripts/release.py backup --env production

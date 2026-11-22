@@ -1,0 +1,74 @@
+name: Inventario CI y CD
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: inventory-release
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Pruebas de integración y reglas de negocio
+        run: python scripts/release.py test
+      - name: Construir artefacto por commit
+        run: python scripts/release.py build --image inventory:${{ github.sha }}
+      - name: Probar imagen en entorno de liberación aislado
+        run: python scripts/release.py test-release --image inventory:${{ github.sha }} --version ${{ github.sha }}
+      - name: Exportar artefacto probado
+        if: github.event_name != 'pull_request'
+        run: python scripts/image_artifact.py save --image inventory:${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: inventory-${{ github.sha }}
+          path: artifacts/inventory.tar*
+          retention-days: 14
+          if-no-files-found: error
+  staging:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ${{ fromJSON(vars.DEPLOY_RUNNER_LABELS || '["self-hosted","linux","x64","inventory-deploy"]') }}
+    environment: staging
+    timeout-minutes: 10
+    env:
+      RELEASE_STATE_DIR: ${{ vars.RELEASE_STATE_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: inventory-${{ github.sha }}
+          path: artifacts
+      - name: Verificar y cargar imagen probada
+        run: python scripts/image_artifact.py load
+      - name: Desplegar y verificar staging
+        run: python scripts/release.py deploy --env staging --image inventory:${{ github.sha }} --version ${{ github.sha }} --monitoring
+  production:
+    needs: staging
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ fromJSON(vars.DEPLOY_RUNNER_LABELS || '["self-hosted","linux","x64","inventory-deploy"]') }}
+    environment: production
+    timeout-minutes: 10
+    env:
+      RELEASE_STATE_DIR: ${{ vars.RELEASE_STATE_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: inventory-${{ github.sha }}
+          path: artifacts
+      - name: Cargar el mismo artefacto aprobado por staging
+        run: python scripts/image_artifact.py load
+      - name: Promover a producción y verificar
+        run: python scripts/release.py deploy --env production --image inventory:${{ github.sha }} --version ${{ github.sha }} --monitoring
